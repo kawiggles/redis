@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"bufio"
 )
 
 const PORT = "6379"
@@ -16,6 +17,10 @@ func RunServer() {
 
 	defer listener.Close()
 
+	// single threaded channel that all connection commands are passed to
+	commandCh := make(chan Command)
+	go RunStore(commandCh)
+
 	fmt.Println("Server is running on port:" + PORT)
 
 	for {
@@ -25,11 +30,27 @@ func RunServer() {
 			continue
 		}
 		
-		go handleConnection(conn)
+		go handleConnection(conn, commandCh)
 	}
 }
 
-func handleConnection(conn net.Conn) {
+func handleConnection(conn net.Conn, commands chan Command) {
 	defer conn.Close()
 
+	reader := bufio.NewReader(conn)
+	// the channel unique to each connection where replies are sent
+	replyCh := make(chan Result, 1)
+
+	for {
+		cmd, err := ParseResp(reader, replyCh)
+		if err != nil {
+			log.Printf("Error parsing connection content: %v\n", err)
+			WriteResp(conn, Result{err: err})
+			continue
+		}
+		commands <- cmd
+
+		result := <-replyCh
+		WriteResp(conn, result)
+	}
 }
