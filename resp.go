@@ -70,6 +70,16 @@ func buildCommand(args []string, replyCh chan Result) (Command, error) {
 			val: "nil",
 			replyCh: replyCh,
 		}, nil
+	case "TTL":
+		if len(args) < 2 {
+			return Command{}, errors.New("not enough arguments for TTL request")
+		}
+		return Command{
+			op: "TTL",
+			key: args[1],
+			val: "nil",
+			replyCh: replyCh,
+		}, nil
 	case "GET":
 		if len(args) < 2 {
 			return Command{}, errors.New("not enough arguments for GET request")

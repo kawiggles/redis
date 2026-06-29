@@ -1,6 +1,8 @@
 package redis
 
-import ()
+import (
+	"errors"
+)
 
 func RunStore(commands chan Command) {
 	// TODO: change store from basic hash map to a struct of some kind
@@ -8,8 +10,58 @@ func RunStore(commands chan Command) {
 
 	for cmd := range commands {
 		switch cmd.op {
-		// TODO: Execute basic commands
-		// and then write to reply channel in that command
+		case "GET":
+			val, ok := store[cmd.key]
+			if ok {
+				cmd.replyCh <- Result{
+					val: val,
+					err: nil,
+				}
+			} else  {
+				cmd.replyCh <- Result{
+					val: "nil",
+					err: nil,
+				}
+			} 
+		case "EXISTS":
+			_, ok := store[cmd.key]
+			if ok {
+				cmd.replyCh <- Result{
+					val: "1",
+					err: nil,
+				}
+			} else {
+				cmd.replyCh <- Result{
+					val: "0",
+					err: nil,
+				}
+			}
+		case "TTL":
+		case "SET":
+			store[cmd.key] = cmd.val
+			cmd.replyCh <- Result{
+				val: "OK",
+				err: nil,
+			}
+		case "DEL":
+			_, ok := store[cmd.key]
+			if ok {
+				delete(store, cmd.key)
+				cmd.replyCh <- Result{
+					val: "1",
+					err: nil,
+				}
+			} else {
+				cmd.replyCh <- Result{
+					val: "0",
+					err: nil,
+				}
+			}
+		default:
+			cmd.replyCh <- Result{
+				val: "nil",
+				err: errors.New("Error executing command"),
+			}
 		}
 	}
 }
