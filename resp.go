@@ -110,7 +110,7 @@ func buildCommand(args []string, replyCh chan Result) (Command, error) {
 		return Command{
 			op: "DEL",
 			key: args[1],
-			val: args[2],
+			val: "nil",
 			replyCh: replyCh,
 		}, nil
 	default:
