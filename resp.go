@@ -52,7 +52,10 @@ func ParseResp(reader *bufio.Reader, replyCh chan Result) (Command, error) {
 		io.ReadFull(reader, buf)
 		cmd[i] = string(buf)
 
-		reader.ReadString('\n')
+		_, err = reader.ReadString('\n')
+		if err != nil {
+			return Command{}, err
+		}
 	}
 
 	return buildCommand(cmd, replyCh)
@@ -101,7 +104,7 @@ func buildCommand(args []string, replyCh chan Result) (Command, error) {
 			replyCh: replyCh,
 		}, nil
 	case "DEL":
-		if len(args) < 3 {
+		if len(args) < 2 {
 			return Command{}, errors.New("not enough arguments for DEL request")
 		}
 		return Command{
@@ -118,10 +121,10 @@ func buildCommand(args []string, replyCh chan Result) (Command, error) {
 
 func WriteResp(conn net.Conn, result Result) {
 	if result.err != nil {
-		msg := "-ERR " + result.err.Error() + "/r/n"
+		msg := "-ERR " + result.err.Error() + "\r\n"
 		conn.Write([]byte(msg))
 	} else {
-		msg := "+" + result.val + "/r/n"
+		msg := "+" + result.val + "\r\n"
 		conn.Write([]byte(msg))
 	}
 }
