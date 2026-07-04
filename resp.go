@@ -1,4 +1,4 @@
-package redis
+package main
 
 import (
 	"errors"
@@ -26,7 +26,7 @@ func ParseResp(reader *bufio.Reader, replyCh chan Result) (Command, error) {
 	if err != nil {
 		return Command{}, err
 	}
-	
+
 	if line[0] != '*' {
 		return Command{}, errors.New("bad request prefix")
 	}
@@ -37,7 +37,7 @@ func ParseResp(reader *bufio.Reader, replyCh chan Result) (Command, error) {
 	}
 
 	cmd := make([]string, count)
-	for i := 0; i < count; i++ {
+	for i := range count {
 		line, err = reader.ReadString('\n')
 		if err != nil {
 			return Command{}, err
@@ -111,9 +111,17 @@ func buildCommand(args []string, replyCh chan Result) (Command, error) {
 			replyCh: replyCh,
 		}, nil
 	default:
-		return Command{}, errors.New("unrecognized command name")
+		msg := "unrecognized command name: " + args[0]
+		return Command{}, errors.New(msg)
 	}
 }
 
 func WriteResp(conn net.Conn, result Result) {
+	if result.err != nil {
+		msg := "-ERR " + result.err.Error() + "/r/n"
+		conn.Write([]byte(msg))
+	} else {
+		msg := "+" + result.val + "/r/n"
+		conn.Write([]byte(msg))
+	}
 }

@@ -1,13 +1,14 @@
-package redis
+package main
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"log"
 	"net"
-	"bufio"
 )
 
-const PORT = "6379"
+const PORT = "127.0.0.1:6379"
 
 func RunServer() {
 	listener, err := net.Listen("tcp", PORT)
@@ -35,6 +36,7 @@ func RunServer() {
 }
 
 func handleConnection(conn net.Conn, commands chan Command) {
+	log.Printf("Accepted new connection from client")
 	defer conn.Close()
 
 	reader := bufio.NewReader(conn)
@@ -44,6 +46,9 @@ func handleConnection(conn net.Conn, commands chan Command) {
 	for {
 		cmd, err := ParseResp(reader, replyCh)
 		if err != nil {
+			if err == io.EOF {
+				return
+			}
 			log.Printf("Error parsing connection content: %v\n", err)
 			WriteResp(conn, Result{err: err})
 			continue
