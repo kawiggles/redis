@@ -2,16 +2,29 @@ package main
 
 import (
 	"errors"
+	"time"
 )
+
+type Store struct {
+	vals map[string]string
+	ttl map[string]time.Time
+}
+
+func NewStore() Store {
+	return Store {
+		vals: make(map[string]string),
+		ttl: map[string]time.Time{},
+	}
+}
 
 func RunStore(commands chan Command) {
 	// TODO: change store from basic hash map to a struct of some kind
-	store := make(map[string]string)
+	store := NewStore()
 
 	for cmd := range commands {
 		switch cmd.op {
 		case "GET":
-			val, ok := store[cmd.key]
+			val, ok := store.vals[cmd.key]
 			if ok {
 				cmd.replyCh <- Result{
 					val: val,
@@ -24,7 +37,7 @@ func RunStore(commands chan Command) {
 				}
 			} 
 		case "EXISTS":
-			_, ok := store[cmd.key]
+			_, ok := store.vals[cmd.key]
 			if ok {
 				cmd.replyCh <- Result{
 					val: "1",
@@ -38,15 +51,18 @@ func RunStore(commands chan Command) {
 			}
 		case "TTL":
 		case "SET":
-			store[cmd.key] = cmd.val
+			store.vals[cmd.key] = cmd.val
+
 			cmd.replyCh <- Result{
 				val: "OK",
 				err: nil,
 			}
 		case "DEL":
-			_, ok := store[cmd.key]
+			_, ok := store.vals[cmd.key]
 			if ok {
-				delete(store, cmd.key)
+				delete(store.vals, cmd.key)
+				delete(store.ttl, cmd.key)
+
 				cmd.replyCh <- Result{
 					val: "1",
 					err: nil,
