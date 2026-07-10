@@ -152,6 +152,12 @@ func buildCommand(args []string, replyCh chan Result) (Command, error) {
 			replyCh: replyCh,
 		}, nil
 
+	case "COMMAND":
+		return Command{
+			op: "COMMAND",
+			replyCh: replyCh,
+		}, nil
+
 	default:
 		return Command{}, fmt.Errorf("unrecognized command name: %s", args[0])
 
@@ -164,6 +170,7 @@ func WriteResp(conn net.Conn, result Result) {
 		conn.Write([]byte(msg))
 	} else {
 		msg := "+" + result.val + "\r\n"
+		// TODO: write actual system for generating response messages
 		conn.Write([]byte(msg))
 	}
 }

@@ -51,6 +51,8 @@ func RunStore(commands chan Command) {
 					err: nil,
 				}
 			}
+		case "COMMAND":
+			sendCommand(cmd)
 		default:
 			cmd.replyCh <- Result{
 				val: "nil",
@@ -83,7 +85,7 @@ func (s Store) exists(cmd Command) {
 			val: "1",
 			err: nil,
 		}
-	} else {
+		} else {
 		cmd.replyCh <- Result{
 			val: "0",
 			err: nil,
@@ -147,4 +149,8 @@ func (s Store) ttl(cmd Command) {
 
 		}
 	}
+}
+
+func sendCommand(cmd Command) {
+	msg := "+
 }
